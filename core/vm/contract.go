@@ -23,7 +23,7 @@ import (
 )
 
 // Contract represents an ethereum contract in the state database. It contains
-// the contract code, calling arguments. Contract implements ContractRef
+// the contract code, calling arguments.
 type Contract struct {
 	// caller is the result of the caller which initialised this
 	// contract. However, when the "call method" is delegated this
@@ -44,6 +44,8 @@ type Contract struct {
 
 	Gas   uint64
 	value *uint256.Int
+
+	isPrecompile bool
 }
 
 // NewContract returns a new contract environment for the execution of EVM.
@@ -61,7 +63,33 @@ func NewContract(caller common.Address, address common.Address, value *uint256.I
 	}
 }
 
+// NewPrecompile returns a new instance of a precompiled contract environment for the execution of EVM.
+func NewPrecompile(caller common.Address, address common.Address, value *uint256.Int, gas uint64) *Contract {
+	c := &Contract{
+		caller:       caller,
+		address:      address,
+		isPrecompile: true,
+	}
+
+	// Gas should be a pointer so it can safely be reduced through the run
+	// This pointer will be off the state transition
+	c.Gas = gas
+	// ensures a value is set
+	c.value = value
+
+	return c
+}
+
+// IsPrecompile returns true if the contract is a precompiled contract environment
+func (c Contract) IsPrecompile() bool {
+	return c.isPrecompile
+}
+
 func (c *Contract) validJumpdest(dest *uint256.Int) bool {
+	if c.isPrecompile {
+		return false
+	}
+
 	udest, overflow := dest.Uint64WithOverflow()
 	// PC cannot go beyond len(code) and certainly can't be bigger than 63bits.
 	// Don't bother checking for JUMPDEST in that case.
@@ -78,6 +106,10 @@ func (c *Contract) validJumpdest(dest *uint256.Int) bool {
 // isCode returns true if the provided PC location is an actual opcode, as
 // opposed to a data-segment following a PUSHN operation.
 func (c *Contract) isCode(udest uint64) bool {
+	if c.isPrecompile {
+		return false
+	}
+
 	// Do we already have an analysis laying around?
 	if c.analysis != nil {
 		return c.analysis.codeSegment(udest)
