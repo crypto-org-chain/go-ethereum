@@ -221,6 +221,12 @@ func DefaultActivePrecompiles(rules params.Rules) []common.Address {
 // DefaultPrecompiles define the mapping of address and precompiles from the default configuration
 func DefaultPrecompiles(rules params.Rules) (precompiles map[common.Address]PrecompiledContract) {
 	switch {
+	case rules.IsVerkle:
+		precompiles = PrecompiledContractsVerkle
+	case rules.IsPrague:
+		precompiles = PrecompiledContractsPrague
+	case rules.IsCancun:
+		precompiles = PrecompiledContractsCancun
 	case rules.IsBerlin:
 		precompiles = PrecompiledContractsBerlin
 	case rules.IsIstanbul:
