@@ -59,12 +59,13 @@ type StateDB interface {
 
 // VMContext provides the context for the EVM execution.
 type VMContext struct {
-	Coinbase    common.Address
-	BlockNumber *big.Int
-	Time        uint64
-	Random      *common.Hash
-	BaseFee     *big.Int
-	StateDB     StateDB
+	Coinbase          common.Address
+	BlockNumber       *big.Int
+	Time              uint64
+	Random            *common.Hash
+	BaseFee           *big.Int
+	StateDB           StateDB
+	ActivePrecompiles []common.Address
 }
 
 // BlockEvent is emitted upon tracing an incoming block.

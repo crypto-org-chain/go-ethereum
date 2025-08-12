@@ -54,7 +54,7 @@ func gasBalance4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 
 func gasExtCodeSize4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	address := stack.peek().Bytes20()
-	if _, isPrecompile := evm.precompile(address); isPrecompile {
+	if _, isPrecompile := evm.Precompile(address); isPrecompile {
 		return 0, nil
 	}
 	if contract.IsSystemCall {
@@ -72,7 +72,7 @@ func gasExtCodeHash4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 		return 0, nil
 	}
 	address := stack.peek().Bytes20()
-	if _, isPrecompile := evm.precompile(address); isPrecompile {
+	if _, isPrecompile := evm.Precompile(address); isPrecompile {
 		return 0, nil
 	}
 	gas := evm.AccessEvents.CodeHashGas(address, false)
@@ -91,7 +91,7 @@ func makeCallVariantGasEIP4762(oldCalculator gasFunc) gasFunc {
 		if contract.IsSystemCall {
 			return gas, nil
 		}
-		if _, isPrecompile := evm.precompile(contract.Address()); isPrecompile {
+		if _, isPrecompile := evm.Precompile(contract.Address()); isPrecompile {
 			return gas, nil
 		}
 		witnessGas := evm.AccessEvents.MessageCallGas(contract.Address())
@@ -111,7 +111,7 @@ var (
 
 func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	beneficiaryAddr := common.Address(stack.peek().Bytes20())
-	if _, isPrecompile := evm.precompile(beneficiaryAddr); isPrecompile {
+	if _, isPrecompile := evm.Precompile(beneficiaryAddr); isPrecompile {
 		return 0, nil
 	}
 	if contract.IsSystemCall {
