@@ -65,7 +65,6 @@ type VMContext struct {
 	Random            *common.Hash
 	BaseFee           *big.Int
 	StateDB           StateDB
-	ActivePrecompiles []common.Address
 }
 
 // BlockEvent is emitted upon tracing an incoming block.

@@ -200,8 +200,8 @@ func ActivePrecompiledContracts(rules params.Rules) PrecompiledContracts {
 	return maps.Clone(activePrecompiledContracts(rules))
 }
 
-// DefaultActivePrecompiles returns the set of precompiles enabled with the default configuration.
-func DefaultActivePrecompiles(rules params.Rules) []common.Address {
+// ActivePrecompiles returns the precompile addresses enabled with the current configuration.
+func ActivePrecompiles(rules params.Rules) []common.Address {
 	switch {
 	case rules.IsPrague:
 		return PrecompiledAddressesPrague
@@ -219,7 +219,7 @@ func DefaultActivePrecompiles(rules params.Rules) []common.Address {
 }
 
 // DefaultPrecompiles define the mapping of address and precompiles from the default configuration
-func DefaultPrecompiles(rules params.Rules) (precompiles map[common.Address]PrecompiledContract) {
+func DefaultPrecompiles(rules params.Rules) (precompiles PrecompiledContracts) {
 	switch {
 	case rules.IsVerkle:
 		precompiles = PrecompiledContractsVerkle
@@ -240,30 +240,12 @@ func DefaultPrecompiles(rules params.Rules) (precompiles map[common.Address]Prec
 	return precompiles
 }
 
-// ActivePrecompiles returns the precompiles enabled with the current configuration.
-//
-// NOTE: The rules argument is ignored as the active precompiles can be set via the WithPrecompiles
-// method according to the chain rules from the current block context.
-func (evm *EVM) ActivePrecompiles(_ params.Rules) []common.Address {
-	return evm.activePrecompiles
-}
 
 // Precompile returns a precompiled contract for the given address. This
 // function returns false if the address is not a registered precompile.
 func (evm *EVM) Precompile(addr common.Address) (PrecompiledContract, bool) {
 	p, ok := evm.precompiles[addr]
 	return p, ok
-}
-
-// WithPrecompiles sets the precompiled contracts and the slice of actives precompiles.
-// IMPORTANT: This function does NOT validate the precompiles provided to the EVM. The caller should
-// use the ValidatePrecompiles function for this purpose prior to calling WithPrecompiles.
-func (evm *EVM) WithPrecompiles(
-	precompiles map[common.Address]PrecompiledContract,
-	activePrecompiles []common.Address,
-) {
-	evm.precompiles = precompiles
-	evm.activePrecompiles = activePrecompiles
 }
 
 // ValidatePrecompiles validates the precompile map against the active
