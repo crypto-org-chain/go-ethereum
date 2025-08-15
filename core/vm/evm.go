@@ -632,11 +632,11 @@ func (evm *EVM) captureEnd(depth int, startGas uint64, leftOverGas uint64, ret [
 // to the tracers.
 func (evm *EVM) GetVMContext() *tracing.VMContext {
 	return &tracing.VMContext{
-		Coinbase:          evm.Context.Coinbase,
-		BlockNumber:       evm.Context.BlockNumber,
-		Time:              evm.Context.Time,
-		Random:            evm.Context.Random,
-		BaseFee:           evm.Context.BaseFee,
-		StateDB:           evm.StateDB,
+		Coinbase:    evm.Context.Coinbase,
+		BlockNumber: evm.Context.BlockNumber,
+		Time:        evm.Context.Time,
+		Random:      evm.Context.Random,
+		BaseFee:     evm.Context.BaseFee,
+		StateDB:     evm.StateDB,
 	}
 }
