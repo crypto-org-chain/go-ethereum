@@ -115,14 +115,11 @@ type EVM struct {
 	callGasTemp uint64
 
 	// precompiles holds the precompiled contracts for the current epoch
-	precompiles map[common.Address]PrecompiledContract
+	precompiles PrecompiledContracts
 
 	// jumpDests is the aggregated result of JUMPDEST analysis made through
 	// the life cycle of EVM.
 	jumpDests map[common.Hash]bitvec
-
-	// activePrecompiles defines the precompiles that are currently active
-	activePrecompiles []common.Address
 }
 
 // NewEVM constructs an EVM instance with the supplied block context, state
@@ -138,8 +135,6 @@ func NewEVM(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainCon
 		chainRules:  chainConfig.Rules(blockCtx.BlockNumber, blockCtx.Random != nil, blockCtx.Time),
 		jumpDests:   make(map[common.Hash]bitvec),
 	}
-	// set the default precompiles
-	evm.activePrecompiles = DefaultActivePrecompiles(evm.chainRules)
 	evm.precompiles = DefaultPrecompiles(evm.chainRules)
 	evm.interpreter = NewEVMInterpreter(evm)
 
@@ -637,12 +632,11 @@ func (evm *EVM) captureEnd(depth int, startGas uint64, leftOverGas uint64, ret [
 // to the tracers.
 func (evm *EVM) GetVMContext() *tracing.VMContext {
 	return &tracing.VMContext{
-		Coinbase:          evm.Context.Coinbase,
-		BlockNumber:       evm.Context.BlockNumber,
-		Time:              evm.Context.Time,
-		Random:            evm.Context.Random,
-		BaseFee:           evm.Context.BaseFee,
-		StateDB:           evm.StateDB,
-		ActivePrecompiles: evm.activePrecompiles,
+		Coinbase:    evm.Context.Coinbase,
+		BlockNumber: evm.Context.BlockNumber,
+		Time:        evm.Context.Time,
+		Random:      evm.Context.Random,
+		BaseFee:     evm.Context.BaseFee,
+		StateDB:     evm.StateDB,
 	}
 }

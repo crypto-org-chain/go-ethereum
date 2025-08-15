@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 func FuzzPrecompiledContracts(f *testing.F) {
@@ -36,7 +37,8 @@ func FuzzPrecompiledContracts(f *testing.F) {
 			return
 		}
 		inWant := string(input)
-		runPrecompiledContract(nil, p, common.Address{}, input, gas, nil, false)
+		evm := NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		runPrecompiledContract(evm, p, common.Address{}, input, gas, nil, false)
 		if inHave := string(input); inWant != inHave {
 			t.Errorf("Precompiled %v modified input data", a)
 		}
