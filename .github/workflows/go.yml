@@ -1,8 +1,7 @@
 name: i386 linux tests
 
 on:
-  push:
-    branches: [ master ]
+  push:  
   pull_request:
     branches: [ master ]
   workflow_dispatch:
