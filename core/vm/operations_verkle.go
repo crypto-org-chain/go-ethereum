@@ -39,7 +39,7 @@ func gasBalance4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 
 func gasExtCodeSize4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	address := stack.peek().Bytes20()
-	if _, isPrecompile := evm.precompile(address); isPrecompile {
+	if _, isPrecompile := evm.Precompile(address); isPrecompile {
 		return GasCosts{}, nil
 	}
 	return GasCosts{ExecutionGas: evm.AccessEvents.BasicDataGas(address, false, contract.Gas.ExecutionGas, true)}, nil
@@ -47,7 +47,7 @@ func gasExtCodeSize4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 
 func gasExtCodeHash4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	address := stack.peek().Bytes20()
-	if _, isPrecompile := evm.precompile(address); isPrecompile {
+	if _, isPrecompile := evm.Precompile(address); isPrecompile {
 		return GasCosts{}, nil
 	}
 	return GasCosts{ExecutionGas: evm.AccessEvents.CodeHashGas(address, false, contract.Gas.ExecutionGas, true)}, nil
@@ -58,7 +58,7 @@ func makeCallVariantGasEIP4762(oldCalculator gasFunc, withTransferCosts bool) ga
 		var (
 			target           = common.Address(stack.back(1).Bytes20())
 			witnessGas       uint64
-			_, isPrecompile  = evm.precompile(target)
+			_, isPrecompile  = evm.Precompile(target)
 			isSystemContract = target == params.HistoryStorageAddress
 		)
 
@@ -110,7 +110,7 @@ var (
 
 func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	beneficiaryAddr := common.Address(stack.peek().Bytes20())
-	if _, isPrecompile := evm.precompile(beneficiaryAddr); isPrecompile {
+	if _, isPrecompile := evm.Precompile(beneficiaryAddr); isPrecompile {
 		return GasCosts{}, nil
 	}
 	if contract.IsSystemCall {
@@ -123,7 +123,7 @@ func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 	}
 	statelessGas := wanted
 	balanceIsZero := evm.StateDB.GetBalance(contractAddr).Sign() == 0
-	_, isPrecompile := evm.precompile(beneficiaryAddr)
+	_, isPrecompile := evm.Precompile(beneficiaryAddr)
 	isSystemContract := beneficiaryAddr == params.HistoryStorageAddress
 
 	if (isPrecompile || isSystemContract) && balanceIsZero {
@@ -191,7 +191,7 @@ func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	}
 	gas := gasCost.ExecutionGas
 	addr := common.Address(stack.peek().Bytes20())
-	_, isPrecompile := evm.precompile(addr)
+	_, isPrecompile := evm.Precompile(addr)
 	if isPrecompile || addr == params.HistoryStorageAddress {
 		var overflow bool
 		if gas, overflow = math.SafeAdd(gas, params.WarmStorageReadCostEIP2929); overflow {

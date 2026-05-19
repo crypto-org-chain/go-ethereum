@@ -4,6 +4,8 @@
 
 .PHONY: geth evm all test lint fmt clean devtools help
 
+TESTPATH?= ./...
+
 GOBIN = ./build/bin
 GO ?= latest
 GORUN = go run
@@ -25,8 +27,10 @@ all:
 	$(GORUN) build/ci.go install
 
 #? test: Run the tests.
+#? to test a specific package eg `make test TESTPATH=./core/vm`
+#? to test specific packages eg `make test TESTPATH="./core/vm ./eth/tracers/native ./internal/ethapi"`	
 test: all
-	$(GORUN) build/ci.go test
+	$(GORUN) build/ci.go test $(TESTPATH)
 
 #? lint: Run certain pre-selected linters.
 lint: ## Run linters.

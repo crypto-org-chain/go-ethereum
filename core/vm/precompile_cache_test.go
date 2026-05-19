@@ -33,7 +33,25 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/lru"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 )
+
+// newPrecompileTestEVM returns an EVM running under the given rules with the
+// given precompile result cache attached.
+func newPrecompileTestEVM(rules params.Rules, cache *PrecompileCache) *EVM {
+	evm := NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+	evm.chainRules = rules
+	evm.precompileCache = cache
+	return evm
+}
+
+// runPrecompileDirect invokes the precompile's Run method on the given input,
+// bypassing gas accounting and the result cache.
+func runPrecompileDirect(p PrecompiledContract, input []byte) ([]byte, error) {
+	contract := NewPrecompile(common.Address{}, p.Address(), new(uint256.Int), GasBudget{})
+	contract.Input = input
+	return p.Run(nil, contract, false)
+}
 
 // allPrecompileSets returns every set a node can run with, labelled by a fork
 // that selects it. It walks the flags of params.Rules and asks
@@ -186,7 +204,7 @@ func TestPrecompileCacheNormalizationSound(t *testing.T) {
 				if !ok {
 					continue
 				}
-				output, err := p.Run(in)
+				output, err := runPrecompileDirect(p, in)
 				prev, dup := seen[string(key)]
 				if !dup {
 					seen[string(key)] = outcome{in, output, err}
@@ -283,8 +301,8 @@ func TestPrecompileCacheHit(t *testing.T) {
 	if !ok {
 		t.Fatalf("%s is not cacheable, pick a different fixture", p.Name())
 	}
-	want, wantGas, wantErr := RunPrecompiledContract(nil, p, addr, input, NewGasBudget(gasCost, 0), nil, rules, cache)
-	got, gotGas, gotErr := RunPrecompiledContract(nil, p, addr, input, NewGasBudget(gasCost, 0), nil, rules, cache)
+	want, wantGas, wantErr := newPrecompileTestEVM(rules, cache).RunPrecompiledContract(p, common.Address{}, input, NewGasBudget(gasCost, 0), new(uint256.Int), false)
+	got, gotGas, gotErr := newPrecompileTestEVM(rules, cache).RunPrecompiledContract(p, common.Address{}, input, NewGasBudget(gasCost, 0), new(uint256.Int), false)
 	if !bytes.Equal(got, want) {
 		t.Errorf("cached output %x, computed %x", got, want)
 	}
@@ -313,9 +331,12 @@ func errEqual(a, b error) bool {
 // decision.
 type undeclaredPrecompile struct{}
 
-func (c *undeclaredPrecompile) RequiredGas([]byte) uint64  { return 0 }
-func (c *undeclaredPrecompile) Run([]byte) ([]byte, error) { return nil, nil }
-func (c *undeclaredPrecompile) Name() string               { return "UNDECLARED" }
+func (c *undeclaredPrecompile) Address() common.Address   { return common.Address{} }
+func (c *undeclaredPrecompile) RequiredGas([]byte) uint64 { return 0 }
+func (c *undeclaredPrecompile) Run(*EVM, *Contract, bool) ([]byte, error) {
+	return nil, nil
+}
+func (c *undeclaredPrecompile) Name() string { return "UNDECLARED" }
 
 // precompileCacheSynthetic lists the precompiles with no test vectors on disk,
 // benchmarked on generated inputs instead.
@@ -360,7 +381,7 @@ func BenchmarkPrecompileCacheHitVsRun(b *testing.B) {
 			if !ok || p.RequiredGas(in) > probeGasLimit {
 				continue
 			}
-			out, err := p.Run(in)
+			out, err := runPrecompileDirect(p, in)
 			if err != nil {
 				continue // errors are never cached, there is no hit to measure
 			}
@@ -379,7 +400,7 @@ func BenchmarkPrecompileCacheHitVsRun(b *testing.B) {
 			b.Run(label+"/run", func(b *testing.B) {
 				b.ReportAllocs()
 				for b.Loop() {
-					p.Run(in)
+					runPrecompileDirect(p, in)
 				}
 			})
 		}
@@ -402,7 +423,7 @@ func BenchmarkPrecompileCacheSynthetic(b *testing.B) {
 			for i := range in {
 				in[i] = byte(i)
 			}
-			out, err := p.Run(in)
+			out, err := runPrecompileDirect(p, in)
 			if err != nil {
 				continue
 			}
@@ -428,7 +449,7 @@ func BenchmarkPrecompileCacheSynthetic(b *testing.B) {
 			b.Run(label+"/run", func(b *testing.B) {
 				b.ReportAllocs()
 				for b.Loop() {
-					p.Run(in)
+					runPrecompileDirect(p, in)
 				}
 			})
 		}
@@ -449,7 +470,7 @@ func TestPrecompileCacheBoundedByKeyBytes(t *testing.T) {
 	// eligible for caching. Keep its key as the eviction witness.
 	var first [128]byte
 	first[63] = 0xff // invalid v
-	out, err := ec.Run(first[:])
+	out, err := runPrecompileDirect(ec, first[:])
 	if err != nil || len(out) != 0 {
 		t.Fatalf("expected empty failed-ecrecover output, got len=%d err=%v", len(out), err)
 	}
