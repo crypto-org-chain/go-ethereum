@@ -4633,8 +4633,9 @@ func TestEstimateGasWithMovePrecompile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EstimateGas failed: %v", err)
 	}
-	if gas != 21366 {
-		t.Fatalf("mismatched gas: %d, want 21366", gas)
+	// The old estimateGas does an exact binary search (no ErrorRatio shortcut).
+	if gas != 21200 {
+		t.Fatalf("mismatched gas: %d, want 21200", gas)
 	}
 }
 
